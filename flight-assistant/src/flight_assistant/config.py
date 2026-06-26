@@ -6,7 +6,7 @@ environment variables always take precedence over ``.env`` values.
 
 Recognized variables:
   * OPENAI_API_KEY   – enables the LLM backend when set.
-  * OPENAI_MODEL     – model name for the LLM backend (default: gpt-4o-mini).
+  * OPENAI_MODEL     – model name for the LLM backend (default: gpt-4.1-nano).
   * OPENAI_BASE_URL  – optional; point at any OpenAI-compatible endpoint
                        (e.g. a local Ollama / LM Studio server).
   * LOG_LEVEL        – logging level for the MCP server (default: INFO).

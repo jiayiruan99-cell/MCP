@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
+import time
 
 from .agent import Agent, MissingCredentialsError
 
@@ -28,32 +29,52 @@ DEMO_QUERIES = [
 ]
 
 
-async def _run_once(agent: Agent, query: str) -> None:
+async def _run_once(agent: Agent, query: str) -> float:
+    """Answer one query, printing the result and its end-to-end latency.
+
+    Returns the elapsed wall-clock time in seconds.
+    """
     print(f"\n\033[1m▶ {query}\033[0m")
+    start = time.perf_counter()
     answer = await agent.answer(query)
+    elapsed = time.perf_counter() - start
     print(answer)
+    print(f"\033[2m⏱  {elapsed:.2f}s end-to-end\033[0m")
+    return elapsed
 
 
 async def _repl(agent: Agent) -> None:
     print("Flight route-discovery assistant. Type a question, or 'quit' to exit.\n")
-    while True:
-        try:
-            query = input("you › ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print()
-            break
-        if query.lower() in {"quit", "exit", "q"}:
-            break
-        if not query:
-            continue
-        print(await agent.answer(query))
-        print()
+    async with agent.connect():
+        while True:
+            try:
+                query = input("you › ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print()
+                break
+            if query.lower() in {"quit", "exit", "q"}:
+                break
+            if not query:
+                continue
+            start = time.perf_counter()
+            answer = await agent.answer(query)
+            elapsed = time.perf_counter() - start
+            print(answer)
+            print(f"\033[2m⏱  {elapsed:.2f}s end-to-end\033[0m\n")
 
 
 async def _demo(agent: Agent) -> None:
     print("Running demo queries")
-    for q in DEMO_QUERIES:
-        await _run_once(agent, q)
+    timings = []
+    async with agent.connect():
+        for q in DEMO_QUERIES:
+            timings.append(await _run_once(agent, q))
+    total = sum(timings)
+    avg = total / len(timings) if timings else 0.0
+    print(
+        f"\n\033[1mDemo complete:\033[0m {len(timings)} queries in "
+        f"{total:.2f}s (avg {avg:.2f}s/query)"
+    )
 
 
 def main() -> None:
@@ -61,7 +82,7 @@ def main() -> None:
     parser.add_argument("query", nargs="*", help="A natural-language route question.")
     parser.add_argument("--demo", action="store_true", help="Run scripted demo queries.")
     parser.add_argument(
-        "--model", help="Override the LLM model (default: OPENAI_MODEL or gpt-4o-mini)."
+        "--model", help="Override the LLM model (default: OPENAI_MODEL or gpt-4.1-nano)."
     )
     args = parser.parse_args()
 
@@ -77,6 +98,9 @@ def main() -> None:
     except MissingCredentialsError as exc:
         print(f"error: {exc}", file=sys.stderr)
         raise SystemExit(2)
+    except Exception as exc:  # noqa: BLE001 - surface LLM/API errors cleanly
+        print(f"error: {type(exc).__name__}: {exc}", file=sys.stderr)
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

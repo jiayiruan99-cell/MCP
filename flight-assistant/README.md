@@ -112,7 +112,7 @@ VS Code) all work **without a key**.
 
 ```bash
 export OPENAI_API_KEY=sk-...
-export OPENAI_MODEL=gpt-4o-mini               # optional
+export OPENAI_MODEL=gpt-4.1-nano               # optional
 
 flight-assistant "Can I fly from Berlin to Lisbon directly?"
 flight-assistant --demo                       # scripted demo queries
@@ -133,7 +133,7 @@ cp .env.example .env
 | Variable               | Purpose                                                   | Default                                                   |
 | ---------------------- | --------------------------------------------------------- | --------------------------------------------------------- |
 | `OPENAI_API_KEY`       | Required to run the assistant (LLM agent).                | _(unset → assistant errors out; server/tests still work)_ |
-| `OPENAI_MODEL`         | Model for the LLM agent.                                  | `gpt-4o-mini`                                             |
+| `OPENAI_MODEL`         | Model for the LLM agent.                                  | `gpt-4.1-nano`                                           |
 | `OPENAI_BASE_URL`      | OpenAI-compatible endpoint (e.g. local Ollama/LM Studio). | OpenAI                                                    |
 | `LOG_LEVEL`            | MCP server log level.                                     | `INFO`                                                    |
 | `OPENFLIGHTS_DATA_DIR` | Dataset cache directory.                                  | `./data`                                                  |
