@@ -5,8 +5,8 @@ Usage:
     flight-assistant            # interactive REPL
     flight-assistant --demo     # run a scripted set of demo queries
 
-The CLI spawns the MCP server as a subprocess via the agent's MCP client and
-uses an LLM (OpenAI function-calling) to orchestrate the tools. Set
+The CLI launches the MCP server over streamable HTTP via the agent's MCP client
+and uses an LLM (OpenAI function-calling) to orchestrate the tools. Set
 ``OPENAI_API_KEY`` (or ``OPENAI_BASE_URL`` for a local OpenAI-compatible server)
 to run it. The MCP server, tests, and MCP hosts work without a key.
 """

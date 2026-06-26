@@ -75,9 +75,10 @@ class Agent:
     async def connect(self):
         """Open one MCP session (one server subprocess) for multiple queries.
 
-        The server loads the OpenFlights datasets once on first use and caches
-        them via the ServiceRegistry, so reusing this session across queries
-        avoids reloading the data for every question.
+        The client launches the MCP server over streamable HTTP and connects to
+        it. The server loads the OpenFlights datasets once on first use and
+        caches them via the ServiceRegistry, so reusing this session across
+        queries avoids reloading the data for every question.
         """
         client = self.backend.make_client()
         async with open_session() as session:
