@@ -29,12 +29,27 @@ SYSTEM_PROMPT = (
     "You are a flight route-discovery assistant. You can ONLY answer using the "
     "provided tools. Never invent airports, airlines, or routes. The data is "
     "HISTORICAL OpenFlights connectivity data — it is not a live schedule, price, "
-    "or booking source, and you must make that limitation clear (each tool result "
-    "includes a 'disclaimer' you should respect). If no direct route exists, offer "
-    "to look for one-stop alternatives. Keep answers concise and structured."
+    "or booking source. If no direct route exists, offer to look for one-stop "
+    "alternatives. Keep answers concise and structured. Do NOT write your own "
+    "data-limitation disclaimer — the application appends the official disclaimer "
+    "automatically, so adding one yourself would duplicate it."
 )
 
 __all__ = ["Agent", "MissingCredentialsError"]
+
+
+def _append_disclaimers(answer: str, disclaimers: list[str]) -> str:
+    """Deterministically append tool disclaimers to the model's answer.
+
+    Enforcement lives here, not in the prompt: the model is non-deterministic
+    and may omit the caveat, so we always append the exact disclaimer text
+    carried by the tool results that were actually used. Each distinct
+    disclaimer is added once; any already present in the answer is skipped.
+    """
+    footer = [d for d in dict.fromkeys(disclaimers) if d and d not in answer]
+    if not footer:
+        return answer
+    return answer.rstrip() + "\n\n" + "\n".join(f"⚠️  {d}" for d in footer)
 
 
 class Agent:
@@ -86,15 +101,23 @@ class Agent:
         tools = self.backend.build_tools(mcp_tools)
         messages = self.backend.initial_messages(SYSTEM_PROMPT, query)
 
+        # Disclaimers carried by the tool results actually used this turn. We
+        # append these deterministically so the caveat never depends on the LLM.
+        disclaimers: list[str] = []
+
         for _ in range(self.max_tool_turns):
             response = self.backend.chat(client, self.model, messages, tools)
             if not response.tool_calls:
-                return response.text or "(no answer)"
+                answer = response.text or "(no answer)"
+                return _append_disclaimers(answer, disclaimers)
 
             self.backend.append_assistant(messages, response)
             for call in response.tool_calls:
                 result = await session.call_tool(call.name, call.arguments)
                 data = tool_result_to_dict(result)
+                disclaimer = data.get("disclaimer") if isinstance(data, dict) else None
+                if disclaimer:
+                    disclaimers.append(disclaimer)
                 self.backend.append_tool_result(messages, call, data)
 
         return "Stopped after too many tool calls; please rephrase your question."
