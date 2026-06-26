@@ -84,9 +84,12 @@ def main() -> None:
     parser.add_argument(
         "--model", help="Override the LLM model (default: OPENAI_MODEL or gpt-4.1-nano)."
     )
+    parser.add_argument(
+        "--provider", help="LLM provider backend (default: LLM_PROVIDER or 'openai')."
+    )
     args = parser.parse_args()
 
-    agent = Agent(model=args.model)
+    agent = Agent(model=args.model, provider=args.provider)
 
     try:
         if args.demo:

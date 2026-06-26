@@ -112,7 +112,7 @@ VS Code) all work **without a key**.
 
 ```bash
 export OPENAI_API_KEY=sk-...
-export OPENAI_MODEL=gpt-4.1-nano               # optional
+export OPENAI_MODEL=gpt-4.1-nano               # optional, see “Switching the model”
 
 flight-assistant "Can I fly from Berlin to Lisbon directly?"
 flight-assistant --demo                       # scripted demo queries
@@ -133,10 +133,57 @@ cp .env.example .env
 | Variable               | Purpose                                                   | Default                                                   |
 | ---------------------- | --------------------------------------------------------- | --------------------------------------------------------- |
 | `OPENAI_API_KEY`       | Required to run the assistant (LLM agent).                | _(unset → assistant errors out; server/tests still work)_ |
-| `OPENAI_MODEL`         | Model for the LLM agent.                                  | `gpt-4.1-nano`                                           |
-| `OPENAI_BASE_URL`      | OpenAI-compatible endpoint (e.g. local Ollama/LM Studio). | OpenAI                                                    |
+| `LLM_PROVIDER`         | LLM backend to use (see “Switching the model” below).     | `openai`                                                  |
+| `OPENAI_MODEL`         | Model for the LLM agent.                                  | `gpt-4.1-nano`                                            |
+| `OPENAI_BASE_URL`      | OpenAI-compatible endpoint (e.g. local Ollama/LM Studio). | OpenAI EU endpoint                                        |
 | `LOG_LEVEL`            | MCP server log level.                                     | `INFO`                                                    |
 | `OPENFLIGHTS_DATA_DIR` | Dataset cache directory.                                  | `./data`                                                  |
+
+#### Switching the model
+
+The agent depends on an `LLMBackend` interface, not a specific vendor, so most
+switches are pure configuration. There are three tiers:
+
+**1. Different OpenAI model — config only.**
+
+```bash
+export OPENAI_MODEL=gpt-4o-mini          # or via .env / --model
+flight-assistant --model gpt-4o "from Tokyo to Reykjavik"
+```
+
+`--model` overrides `OPENAI_MODEL` for a single run, which is handy for A/B
+comparisons (the CLI prints end-to-end latency per query).
+
+**2. Different OpenAI-compatible provider — config only.**
+
+Any endpoint that speaks the OpenAI API (Azure OpenAI, Groq, Together, local
+Ollama / LM Studio, vLLM, …) works by pointing `OPENAI_BASE_URL` at it:
+
+```bash
+# Local Ollama (free, no real token needed — great for token-free demos)
+export OPENAI_BASE_URL=http://localhost:11434/v1
+export OPENAI_MODEL=llama3.1
+export OPENAI_API_KEY=ollama            # dummy, just must be non-empty
+
+# Groq
+export OPENAI_BASE_URL=https://api.groq.com/openai/v1
+export OPENAI_MODEL=llama-3.1-8b-instant
+```
+
+No code changes — the OpenAI backend already reads `OPENAI_BASE_URL`.
+
+**3. A different SDK (e.g. Anthropic Claude, Google Gemini) — one new file.**
+
+Providers with their own SDKs/message formats are isolated behind the
+`LLMBackend` interface in [`assistant/backends/`](src/flight_assistant/assistant/backends).
+To add one:
+
+1. Implement `LLMBackend` in `assistant/backends/<provider>_backend.py`.
+2. Register it in `assistant/backends/__init__.py` (`_BACKENDS`).
+3. Select it with `LLM_PROVIDER=<provider>` or `--provider <provider>`.
+
+The agent loop, MCP server, tools, registry, domain, and data layers are
+**unchanged** — only the new backend file is added.
 
 ### 2. Run the MCP server standalone
 
