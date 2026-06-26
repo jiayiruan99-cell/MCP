@@ -60,6 +60,9 @@ class OpenAIBackend(LLMBackend):
             {"role": "user", "content": user},
         ]
 
+    def append_user(self, messages: list, user: str) -> None:
+        messages.append({"role": "user", "content": user})
+
     def chat(self, client: Any, model: str, messages: list, tools: Any) -> LLMResponse:
         resp = client.chat.completions.create(
             model=model, messages=messages, tools=tools, temperature=0
@@ -77,6 +80,9 @@ class OpenAIBackend(LLMBackend):
 
     def append_assistant(self, messages: list, response: LLMResponse) -> None:
         messages.append(response.raw.model_dump(exclude_none=True))
+
+    def append_assistant_text(self, messages: list, text: str) -> None:
+        messages.append({"role": "assistant", "content": text})
 
     def append_tool_result(self, messages: list, call: ToolCall, data: dict) -> None:
         messages.append(

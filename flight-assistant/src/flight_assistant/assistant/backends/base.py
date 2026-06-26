@@ -66,11 +66,17 @@ class LLMBackend(Protocol):
     def initial_messages(self, system: str, user: str) -> list:
         """Seed the conversation with the system prompt and user query."""
 
+    def append_user(self, messages: list, user: str) -> None:
+        """Append a follow-up user turn to an ongoing conversation."""
+
     def chat(self, client: Any, model: str, messages: list, tools: Any) -> LLMResponse:
         """Run one chat turn and normalize the result to LLMResponse."""
 
     def append_assistant(self, messages: list, response: LLMResponse) -> None:
         """Append the assistant's tool-calling message to the conversation."""
+
+    def append_assistant_text(self, messages: list, text: str) -> None:
+        """Append the assistant's final text answer to the conversation."""
 
     def append_tool_result(self, messages: list, call: ToolCall, data: dict) -> None:
         """Append the result of one tool call to the conversation."""

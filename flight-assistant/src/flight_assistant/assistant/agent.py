@@ -70,6 +70,7 @@ class Agent:
         self.max_tool_turns = max_tool_turns
         self._client = None
         self._session = None
+        self._messages: list | None = None
 
     @asynccontextmanager
     async def connect(self):
@@ -79,28 +80,39 @@ class Agent:
         it. The server loads the OpenFlights datasets once on first use and
         caches them via the ServiceRegistry, so reusing this session across
         queries avoids reloading the data for every question.
+
+        A single conversation history is kept for the lifetime of the session,
+        so follow-up questions ("yes", "one-stop alternatives") retain the
+        context of earlier turns.
         """
         client = self.backend.make_client()
         async with open_session() as session:
             self._client, self._session = client, session
+            self._messages = None
             try:
                 yield self
             finally:
                 self._client, self._session = None, None
+                self._messages = None
 
     async def answer(self, query: str) -> str:
-        # Reuse an open session if we're inside `connect()`; otherwise open a
-        # one-shot session for this single query.
+        # Inside `connect()` we reuse one session *and* one running
+        # conversation, so the model sees previous turns. Outside it, each call
+        # is a self-contained one-shot with fresh history.
         if self._session is not None:
-            return await self._run(self._client, self._session, query)
+            if self._messages is None:
+                self._messages = self.backend.initial_messages(SYSTEM_PROMPT, query)
+            else:
+                self.backend.append_user(self._messages, query)
+            return await self._run(self._client, self._session, self._messages)
         client = self.backend.make_client()
         async with open_session() as session:
-            return await self._run(client, session, query)
+            messages = self.backend.initial_messages(SYSTEM_PROMPT, query)
+            return await self._run(client, session, messages)
 
-    async def _run(self, client, session, query: str) -> str:
+    async def _run(self, client, session, messages: list) -> str:
         mcp_tools = (await session.list_tools()).tools
         tools = self.backend.build_tools(mcp_tools)
-        messages = self.backend.initial_messages(SYSTEM_PROMPT, query)
 
         # Disclaimers carried by the tool results actually used this turn. We
         # append these deterministically so the caveat never depends on the LLM.
@@ -110,6 +122,8 @@ class Agent:
             response = self.backend.chat(client, self.model, messages, tools)
             if not response.tool_calls:
                 answer = response.text or "(no answer)"
+                # Record the model's reply so follow-up turns have context.
+                self.backend.append_assistant_text(messages, answer)
                 return _append_disclaimers(answer, disclaimers)
 
             self.backend.append_assistant(messages, response)
