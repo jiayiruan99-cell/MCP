@@ -1,0 +1,14 @@
+{
+  // VS Code MCP host config. Start it via the "Start" code lens above the
+  // server entry, or run "MCP: List Servers" from the Command Palette.
+  // stdio: VS Code launches the server as a subprocess (no port, no key).
+  // Uses the interpreter selected via "Python: Select Interpreter", so the
+  // same config works on macOS/Linux and Windows.
+  "servers": {
+    "flight-route-discovery": {
+      "type": "stdio",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "flight_assistant.mcp_server.server"]
+    }
+  }
+}

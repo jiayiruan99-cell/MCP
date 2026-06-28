@@ -1,0 +1,11 @@
+{
+    // Select the project's .venv once via "Python: Select Interpreter" so it's
+    // used for Run/Debug, tests, and the terminal. (Not pinned here because the
+    // venv path differs by OS: .venv/bin on macOS/Linux, .venv/Scripts on Windows.)
+    "python.terminal.activateEnvironment": true,
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestArgs": [
+        "tests"
+    ]
+}

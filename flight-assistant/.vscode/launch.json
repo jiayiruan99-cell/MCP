@@ -1,0 +1,44 @@
+{
+    // Debug configurations for the flight-assistant. Pick one from the
+    // "Run and Debug" dropdown, then press F5. All load variables from .env.
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug assistant (one query)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "flight_assistant.assistant.cli",
+            "args": [
+                "Can I fly from Berlin to Lisbon directly?"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Debug assistant (REPL)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "flight_assistant.assistant.cli",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Debug MCP server (HTTP)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "flight_assistant.mcp_server.server",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "MCP_TRANSPORT": "http",
+                "MCP_PORT": "8765"
+            },
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
