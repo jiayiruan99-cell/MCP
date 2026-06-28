@@ -25,7 +25,7 @@ class OpenAIBackend(LLMBackend):
 
     @property
     def default_model(self) -> str:
-        return os.environ.get("OPENAI_MODEL", "gpt-4.1-nano")
+        return os.environ.get("OPENAI_MODEL", "gpt-5.4-nano")
 
     def make_client(self) -> Any:
         from openai import OpenAI  # imported lazily so it's only needed at runtime

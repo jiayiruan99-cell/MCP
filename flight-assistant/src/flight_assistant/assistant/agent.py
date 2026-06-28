@@ -71,6 +71,10 @@ class Agent:
         self._client = None
         self._session = None
         self._messages: list | None = None
+        # Stats for the most recent answer() call: how many LLM turns issued
+        # tool calls, and how many tool calls were made in total.
+        self.last_tool_rounds = 0
+        self.last_tool_calls = 0
 
     @asynccontextmanager
     async def connect(self):
@@ -118,6 +122,10 @@ class Agent:
         # append these deterministically so the caveat never depends on the LLM.
         disclaimers: list[str] = []
 
+        # Reset per-run tool-usage stats (exposed for logging by callers).
+        self.last_tool_rounds = 0
+        self.last_tool_calls = 0
+
         for _ in range(self.max_tool_turns):
             response = self.backend.chat(client, self.model, messages, tools)
             if not response.tool_calls:
@@ -126,6 +134,8 @@ class Agent:
                 self.backend.append_assistant_text(messages, answer)
                 return _append_disclaimers(answer, disclaimers)
 
+            self.last_tool_rounds += 1
+            self.last_tool_calls += len(response.tool_calls)
             self.backend.append_assistant(messages, response)
             for call in response.tool_calls:
                 result = await session.call_tool(call.name, call.arguments)

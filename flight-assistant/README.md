@@ -17,10 +17,30 @@ Protocol)** tool boundary.
 
 Requires Python 3.10+.
 
+**macOS / Linux:**
+
 ```bash
 cd flight-assistant
 python3 -m venv .venv
 source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+**Windows (PowerShell):**
+
+```powershell
+cd flight-assistant
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
+```
+
+**Windows (Command Prompt):**
+
+```bat
+cd flight-assistant
+py -m venv .venv
+.\.venv\Scripts\activate.bat
 pip install -e ".[dev]"
 ```
 
@@ -43,6 +63,11 @@ flight-assistant "Can I fly from Berlin to Lisbon directly?"
 flight-assistant --demo                       # scripted demo queries
 flight-assistant                              # interactive REPL
 ```
+
+On Windows, set the key first with `setx OPENAI_API_KEY "sk-..."` (then reopen
+the terminal) or, for the current session only, `$env:OPENAI_API_KEY="sk-..."`
+in PowerShell / `set OPENAI_API_KEY=sk-...` in Command Prompt. The
+`flight-assistant` commands are the same on all platforms.
 
 ---
 

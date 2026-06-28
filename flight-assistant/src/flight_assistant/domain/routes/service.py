@@ -49,7 +49,7 @@ class RouteDiscoveryService:
         routes: list[RouteInfo] = []
         dest_iatas = {ap.iata.upper(): ap for ap in dests if ap.iata}
         for o in origins:
-            assert o.iata
+            # _resolve_airports() guarantees every origin has an IATA code.
             # Iterate departing routes once and filter by the destination set.
             for r in self.repo.routes_from.get(o.iata.upper(), []):
                 if r.stops != 0:

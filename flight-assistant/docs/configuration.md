@@ -19,7 +19,7 @@ cp .env.example .env
 | ---------------------- | --------------------------------------------------------------- | --------------------------------------------------------- |
 | `OPENAI_API_KEY`       | Required to run the assistant (LLM agent).                      | _(unset → assistant errors out; server/tests still work)_ |
 | `LLM_PROVIDER`         | LLM backend to use (see [Switching the model](models.md)).      | `openai`                                                  |
-| `OPENAI_MODEL`         | Model for the LLM agent.                                        | `gpt-4.1-nano`                                            |
+| `OPENAI_MODEL`         | Model for the LLM agent.                                        | `gpt-5.4-nano`                                            |
 | `OPENAI_BASE_URL`      | OpenAI-compatible endpoint (e.g. local Ollama/LM Studio).       | OpenAI EU endpoint                                        |
 | `MCP_TRANSPORT`        | MCP server transport: `stdio`, `streamable-http`/`http`, `sse`. | `stdio`                                                   |
 | `MCP_HOST`             | Bind address for the HTTP/SSE transports.                       | `127.0.0.1`                                               |

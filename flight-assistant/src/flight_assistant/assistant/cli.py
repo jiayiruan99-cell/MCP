@@ -20,6 +20,23 @@ import time
 
 from .agent import Agent, MissingCredentialsError
 
+
+def _leaf_errors(exc: BaseException) -> list[BaseException]:
+    """Flatten an ExceptionGroup into its underlying leaf exceptions.
+
+    The MCP client runs inside an anyio task group, so a failure there is
+    re-raised as an ``ExceptionGroup`` whose message is the unhelpful
+    "unhandled errors in a TaskGroup". Unwrapping it surfaces the real cause
+    (e.g. an OpenAI auth/network error) to the user.
+    """
+    inner = getattr(exc, "exceptions", None)
+    if inner:
+        leaves: list[BaseException] = []
+        for sub in inner:
+            leaves.extend(_leaf_errors(sub))
+        return leaves
+    return [exc]
+
 DEMO_QUERIES = [
     "Can I fly from Berlin to Lisbon directly?",
     "Find airports in Portugal",
@@ -39,10 +56,14 @@ async def _run_once(agent: Agent, query: str) -> float:
     answer = await agent.answer(query)
     elapsed = time.perf_counter() - start
     print(answer)
-    print(f"\033[2m⏱  {elapsed:.2f}s end-to-end\033[0m")
+    print(
+        f"\033[2m⏱  {elapsed:.2f}s end-to-end · "
+        f"{agent.last_tool_rounds} tool round(s), "
+        f"{agent.last_tool_calls} tool call(s)\033[0m"
+    )
     return elapsed
 
-
+# Read–Eval–Print Loop
 async def _repl(agent: Agent) -> None:
     print("Flight route-discovery assistant. Type a question, or 'quit' to exit.\n")
     async with agent.connect():
@@ -60,7 +81,11 @@ async def _repl(agent: Agent) -> None:
             answer = await agent.answer(query)
             elapsed = time.perf_counter() - start
             print(answer)
-            print(f"\033[2m⏱  {elapsed:.2f}s end-to-end\033[0m\n")
+            print(
+                f"\033[2m⏱  {elapsed:.2f}s end-to-end · "
+                f"{agent.last_tool_rounds} tool round(s), "
+                f"{agent.last_tool_calls} tool call(s)\033[0m\n"
+            )
 
 
 async def _demo(agent: Agent) -> None:
@@ -82,7 +107,7 @@ def main() -> None:
     parser.add_argument("query", nargs="*", help="A natural-language route question.")
     parser.add_argument("--demo", action="store_true", help="Run scripted demo queries.")
     parser.add_argument(
-        "--model", help="Override the LLM model (default: OPENAI_MODEL or gpt-4.1-nano)."
+        "--model", help="Override the LLM model (default: OPENAI_MODEL or gpt-5.4-nano)."
     )
     parser.add_argument(
         "--provider", help="LLM provider backend (default: LLM_PROVIDER or 'openai')."
@@ -102,7 +127,14 @@ def main() -> None:
         print(f"error: {exc}", file=sys.stderr)
         raise SystemExit(2)
     except Exception as exc:  # noqa: BLE001 - surface LLM/API errors cleanly
-        print(f"error: {type(exc).__name__}: {exc}", file=sys.stderr)
+        # anyio wraps task-group failures in an ExceptionGroup ("unhandled
+        # errors in a TaskGroup"); unwrap it so the real cause is shown.
+        for leaf in _leaf_errors(exc):
+            if isinstance(leaf, MissingCredentialsError):
+                print(f"error: {leaf}", file=sys.stderr)
+                raise SystemExit(2)
+        for leaf in _leaf_errors(exc):
+            print(f"error: {type(leaf).__name__}: {leaf}", file=sys.stderr)
         raise SystemExit(1)
 
 

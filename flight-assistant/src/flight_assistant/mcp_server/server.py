@@ -6,10 +6,11 @@ over the Model Context Protocol.
 
 The transport is configurable (``MCP_TRANSPORT``):
 
-  * ``stdio`` (default) — local subprocess transport used by the in-repo agent
-    and by local MCP hosts (Claude Desktop / VS Code).
+  * ``stdio`` (default) — local subprocess transport used by local MCP hosts
+    (Claude Desktop / VS Code).
   * ``streamable-http`` / ``sse`` — networked transports for hosting the server
     as a remote connector (e.g. behind TLS + auth for ChatGPT / Claude Team).
+    The in-repo agent auto-starts the server over ``streamable-http``.
 
 Capabilities are registered from per-capability modules in ``tools/``. Adding a
 new capability is a two-line change: import its module and add it to

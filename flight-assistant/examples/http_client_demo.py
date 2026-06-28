@@ -1,9 +1,11 @@
 """Connect to the MCP server over the streamable-HTTP transport.
 
 This mirrors how a *remote* MCP host (e.g. a ChatGPT / Claude Team connector)
-talks to the server: over HTTP rather than the local stdio subprocess transport
-used by the in-repo agent. It initializes a session, lists the advertised tools,
-and calls one — exercising the full networked tool boundary end-to-end.
+talks to the server: by connecting to an already-running server over HTTP. The
+in-repo agent uses the same HTTP transport but auto-starts its own server
+subprocess; here you start the server yourself in a separate terminal. It
+initializes a session, lists the advertised tools, and calls one — exercising
+the full networked tool boundary end-to-end.
 
 Usage
 -----
